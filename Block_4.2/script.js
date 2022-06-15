@@ -29,11 +29,15 @@ class View {
 
     this.searchResult.style.paddingLeft = "0px";
 
-    repoElement.addEventListener("click", () => this.showRepo(data));
+    repoElement.addEventListener("click", () => {
+      this.showRepo(data);
+      this.input.value = "";
+    });
     repoElement.textContent = `${data.name}`;
 
     this.searchResult.append(repoElement);
   }
+
   clearRepo() {
     this.searchResult.innerHTML = "";
   }
@@ -56,8 +60,8 @@ class View {
     const star = RepoData.stargazers_count;
 
     const search_out = this.createElement("div", "search_out");
-    const card = this.createElement("ul", 'card');
-    const card_delete = this.createElement('button')
+    const card = this.createElement("ul", "card");
+    const card_delete = this.createElement("button");
 
     this.loadRepoData(name, owner, star).then(() => {
       const card_text = [...document.querySelectorAll("li")];
@@ -69,7 +73,7 @@ class View {
 
       card.style.listStyleType = "none";
       card.style.paddingLeft = "0";
-      card.style.margin = '0';
+      card.style.margin = "0";
 
       search_out.style.display = "flex";
       search_out.style.background = "#E27BEB";
@@ -77,30 +81,27 @@ class View {
       search_out.style.width = "10em";
       search_out.style.border = "1px solid black";
 
-      card_delete.style.marginLeft = 'auto'
-      card_delete.style.background = 'red'
+      card_delete.style.marginLeft = "auto";
+      card_delete.style.background = "red";
 
       card_name.textContent = `Name: ${name}`;
       card_owner.textContent = `Owner: ${owner}`;
       card_star.textContent = `Stars: ${star}`;
 
-      search_out.appendChild(card)
+      search_out.appendChild(card);
       search_out.appendChild(card_delete);
 
       card.appendChild(card_name);
       card.appendChild(card_owner);
       card.appendChild(card_star);
-      
-      card_delete.addEventListener('click', () => {
-        search_out.remove(RepoData)
-      })
 
-      this.wrapper.append(search_out)
-      
+      card_delete.addEventListener("click", () => {
+        search_out.remove(RepoData);
+      });
+
+      this.wrapper.append(search_out);
     });
-    
   }
-
 }
 
 class Search {
@@ -126,16 +127,16 @@ class Search {
           this.view.clearRepo();
         }
       });
-    })
+    });
   }
 
-  debounce (fn, debounceTime) {
-    let block
+  debounce(fn, debounceTime) {
+    let block;
     return function wrapper(...arg) {
-        clearTimeout(block)
-        block = setTimeout(() => fn.apply(this, arg), debounceTime);
+      clearTimeout(block);
+      block = setTimeout(() => fn.apply(this, arg), debounceTime);
     };
-  };
+  }
 }
 
 new Search(new View());
