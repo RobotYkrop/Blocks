@@ -11,31 +11,36 @@ class View {
     this.searchResult = this.createElement("ul", "search_result");
     this.wrapper.append(this.searchResult);
   }
-
-  createElement(tagEl, classEl) {
-    const inp = document.createElement(tagEl);
-    if (classEl) inp.classList.add(classEl);
-    return inp;
+  // class зарезервирован, поэтому нельзя прописать аргументом слово - class :(
+  createElement(tag, classEl) {
+    const element = document.createElement(tag);
+    if (classEl) element.classList.add(classEl);
+    return element;
   }
 
+  // Я надеюсь правильно понял, что не нужно добавлять файл css, а все стили должны быть через js
   createRepo(data) {
     const repoElement = this.createElement("li", "search_repo");
 
-    repoElement.style.listStyleType = "none";
-    repoElement.style.width = "10em";
-    repoElement.style.background = "#E3E3E3";
-    repoElement.style.height = "1em";
-    repoElement.style.border = "1px solid black";
+    repoElement.style.cssText = `
+    list-style-type: none;
+    width: 10em;
+    background: #e3e3e3;
+    height: 1em;
+    border: 1px solid black; `;
 
-    this.searchResult.style.paddingLeft = "0px";
+    this.searchResult.style.cssText = `
+    padding-left: 0;
+    `;
 
-    repoElement.addEventListener("click", () => {
-      this.showRepo(data);
-      this.input.value = "";
+    const that = this;
+    repoElement.addEventListener("click", function repoClick() {
+      that.showRepo(data);
+      that.input.value = "";
     });
     repoElement.textContent = `${data.name}`;
 
-    this.searchResult.append(repoElement);
+    that.searchResult.append(repoElement);
   }
 
   clearRepo() {
@@ -49,44 +54,42 @@ class View {
       `https://api.github.com/repositories/${stargazers}`,
     ];
     const requests = urls.map((url) => fetch(url));
-    return Promise.all(requests).then((responses) =>
-      Promise.all(responses.map((r) => r.json()))
+    await Promise.all(requests).then((responses) =>
+      responses.map((r) => r.json())
     );
   }
 
   showRepo(RepoData) {
-    const name = RepoData.name;
-    const owner = RepoData.owner.login;
-    const star = RepoData.stargazers_count;
-
+    const { name, owner, stargazers_count } = RepoData;
     const search_out = this.createElement("div", "search_out");
     const card = this.createElement("ul", "card");
     const card_delete = this.createElement("button");
 
-    this.loadRepoData(name, owner, star).then(() => {
-      const card_text = [...document.querySelectorAll("li")];
+    search_out.style.cssText = `
+    display: flex;
+    background: #E27BEB;
+    height: 5em;
+    width: 10em;
+    border: 1px solid black; `;
+
+    card.style.cssText = `
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+    `;
+    card_delete.style.cssText = `
+    margin-left: auto;
+    background-color: red;
+    `;
+
+    this.loadRepoData(name, owner, stargazers_count).then(() => {
       const card_name = this.createElement("li");
       const card_owner = this.createElement("li");
       const card_star = this.createElement("li");
 
-      card_text.forEach((i) => (i.className += "card-text"));
-
-      card.style.listStyleType = "none";
-      card.style.paddingLeft = "0";
-      card.style.margin = "0";
-
-      search_out.style.display = "flex";
-      search_out.style.background = "#E27BEB";
-      search_out.style.height = "5em";
-      search_out.style.width = "10em";
-      search_out.style.border = "1px solid black";
-
-      card_delete.style.marginLeft = "auto";
-      card_delete.style.background = "red";
-
       card_name.textContent = `Name: ${name}`;
-      card_owner.textContent = `Owner: ${owner}`;
-      card_star.textContent = `Stars: ${star}`;
+      card_owner.textContent = `Owner: ${owner.login}`;
+      card_star.textContent = `Stars: ${stargazers_count}`;
 
       search_out.appendChild(card);
       search_out.appendChild(card_delete);
@@ -95,7 +98,7 @@ class View {
       card.appendChild(card_owner);
       card.appendChild(card_star);
 
-      card_delete.addEventListener("click", () => {
+      card_delete.addEventListener("click", function repoDelete() {
         search_out.remove(RepoData);
       });
 
@@ -113,20 +116,24 @@ class Search {
     );
   }
 
-  async searchContent(page, isUpdate = false) {
+  async RepoLoad(page) {
+    return await fetch(
+      `https://api.github.com/search/repositories?q=${this.view.input.value}&per_page=${REPO_PER_PAGE}&page=${page}`
+    );
+  }
+
+  async searchContent(isUpdate = false) {
     if (!isUpdate) {
       this.view.clearRepo();
     }
-    return await fetch(
-      `https://api.github.com/search/repositories?q=${this.view.input.value}&per_page=${REPO_PER_PAGE}&page=${page}`
-    ).then((res) => {
+    this.RepoLoad().then((res) => {
       res.json().then((res) => {
-        if (res.items) {
-          res.items.forEach((repo) => this.view.createRepo(repo));
-        } else {
-          this.view.clearRepo();
-        }
-      });
+      if (res.items) {
+        res.items.forEach((repo) => this.view.createRepo(repo));
+      } else {
+        this.view.clearRepo();
+      }
+    })
     });
   }
 
